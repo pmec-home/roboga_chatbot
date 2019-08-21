@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import division
@@ -18,6 +19,11 @@ directory = os.path.dirname(os.path.realpath(__file__))
 
 import sys
 current_module = sys.modules[__name__]
+
+import rospy
+from std_srvs.srv import Empty, Trigger
+from roboga_tts.srv import Tts
+from roboga_nlu.srv import Nlu
 
 ###########################################################
 # List of Intens
@@ -43,7 +49,7 @@ class Intents(Enum):
 # the list of questions and answer and its nlp abstraction
 ##########################################################
 #Questions and Answer dataset
-QandA = pd.read_csv(directory+'/rasa/questions_and_answers.csv')
+QandA = pd.read_csv(directory+'/resources/questions_and_answers.csv')
 nlp = spacy.load('en_core_web_sm')
 def load_nlp(word_list):
     global nlp
@@ -70,20 +76,18 @@ class Planner():
 		# define the name of the action which can then be included in training stories
 		x = "sup"
 
-	def read(self, tracker):
+	def read(self, nlu_response):
 		global nlp_list, QandA
-		print(tracker)
-		message = tracker['text']
-		intent = Intents(tracker["intent"].get("name"))
-		entities = Entities(tracker.get("entities"))
-		print(message, intent)
-		print(entities)
+		print(nlu_response)
+		message = nlu_response.message
+		intent = Intents(nlu_response.intent)
+		entities = Entities(nlu_response.entities)
 		if(intent == Intents.QUESTION):
 			rank = compareToNlpList(message, nlp_list)
 			if(float(rank[0]['similarity']) > 0.65):
 				#Grab answer form the Q and A dataframe
 				answer = QandA[QandA['QUESTION'] == rank[0]['text']]['ANSWER'].iloc[0]
-				#If the answer is in the format ${code} grab the code inside and run ir
+				#If the answer is in the format ${code} grab the code inside and run it
 				if '$' in answer:
 					code = re.search('\${(.*)}', answer).group(1)
 					answer = eval(code)
@@ -124,7 +128,7 @@ class Planner():
 
 class Entities():
 	def __init__(self, entities):
-		self.entities = [{"entity": x.get("entity"), "value": x.get("value")} for x in entities]
+		self.entities = [eval(x) for x in entities]
 
 	def hasType(self, type):
 		for entity in self.entities:
@@ -167,3 +171,29 @@ class Entities():
 	def size(self):
 		return len(self.entities)
 
+	def __repr__(self):
+		return str(self.entities)
+
+class ChatBot():
+	def __init__(self):
+		rospy.init_node("chatbot")
+		rospy.wait_for_service('/roboga/wake_word')
+		rospy.wait_for_service('/roboga/tts')
+		rospy.wait_for_service('/roboga/stt')
+		rospy.wait_for_service('/roboga/nlu')
+		self.wake_word = rospy.ServiceProxy('/roboga/wake_word', Empty)
+		self.tts = rospy.ServiceProxy('/roboga/tts', Tts)
+		self.stt = rospy.ServiceProxy('/roboga/stt', Trigger)
+		self.nlu = rospy.ServiceProxy('/roboga/nlu', Nlu)
+		self.planner = Planner()
+
+	def listen(self):
+		self.wake_word()
+		stt_response = self.stt()
+		nlu_response = self.nlu(stt_response.message)
+		self.tts(self.planner.read(nlu_response))
+
+if __name__ == "__main__":
+	chatbot = ChatBot()
+	while(True):
+		chatbot.listen()

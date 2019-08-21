@@ -7,4 +7,6 @@
     </include>
     <include file="$(find roboga_nlu)/launch/rasa_nlu.launch">
     </include>
+    <node name="chatbot" pkg="roboga_chatbot" type="planner.py" output="screen" >
+    </node>
 </launch>
