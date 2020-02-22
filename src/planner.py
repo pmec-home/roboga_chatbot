@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from __future__ import division
@@ -22,8 +22,8 @@ current_module = sys.modules[__name__]
 
 import rospy
 from std_srvs.srv import Empty, Trigger
-from roboga_tts.srv import Tts
-from roboga_nlu.srv import Nlu
+from zordon_tts.srv import Tts
+from zordon_nlu.srv import Nlu
 
 ###########################################################
 # List of Intens
@@ -177,20 +177,24 @@ class Entities():
 class ChatBot():
 	def __init__(self):
 		rospy.init_node("chatbot")
-		rospy.wait_for_service('/roboga/wake_word')
-		rospy.wait_for_service('/roboga/tts')
-		rospy.wait_for_service('/roboga/stt')
-		rospy.wait_for_service('/roboga/nlu')
-		self.wake_word = rospy.ServiceProxy('/roboga/wake_word', Empty)
-		self.tts = rospy.ServiceProxy('/roboga/tts', Tts)
-		self.stt = rospy.ServiceProxy('/roboga/stt', Trigger)
-		self.nlu = rospy.ServiceProxy('/roboga/nlu', Nlu)
+		rospy.wait_for_service('/zordon/wake_word')
+		rospy.wait_for_service('/zordon/tts')
+		rospy.wait_for_service('/zordon/stt')
+		rospy.wait_for_service('/zordon/nlu')
+		self.wake_word = rospy.ServiceProxy('/zordon/wake_word', Empty)
+		self.tts = rospy.ServiceProxy('/zordon/tts', Tts)
+		self.stt = rospy.ServiceProxy('/zordon/stt', Trigger)
+		self.nlu = rospy.ServiceProxy('/zordon/nlu', Nlu)
 		self.planner = Planner()
 
 	def listen(self):
+		print('Waiting wake word...')
 		self.wake_word()
+		print('Listening command...')
 		stt_response = self.stt()
+		print(stt_response)
 		nlu_response = self.nlu(stt_response.message)
+		print(nlu_response)
 		self.tts(self.planner.read(nlu_response))
 
 if __name__ == "__main__":

@@ -1,12 +1,14 @@
 <launch>
     <include file="$(find wake_word)/launch/wake_word.launch">
     </include>
-    <include file="$(find roboga_stt)/launch/roboga_stt.launch">
+    <include file="$(find zordon_stt)/launch/zordon_stt.launch">
     </include>
-    <include file="$(find roboga_tts)/launch/roboga_tts.launch">
+    <include file="$(find zordon_tts)/launch/zordon_tts.launch">
     </include>
-    <include file="$(find roboga_nlu)/launch/rasa_nlu.launch">
+    <include file="$(find zordon_nlu)/launch/rasa_nlu.launch">
     </include>
-    <node name="chatbot" pkg="roboga_chatbot" type="planner.py" output="screen" >
+    <!--
+    <node name="chatbot" pkg="zordon_chatbot" type="planner.py" output="screen" >
     </node>
+     -->
 </launch>
