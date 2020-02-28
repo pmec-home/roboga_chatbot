@@ -8,8 +8,8 @@ project(zordon_chatbot)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  zordon_nlu
-  zordon_stt
+  roboga_nlu
+  roboga_stt
   rospy
   std_msgs
   wake_word
